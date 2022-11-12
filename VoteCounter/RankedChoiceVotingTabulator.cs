@@ -293,11 +293,11 @@ namespace VoteCounter
               
                 IEnumerable<(string candidate, int choice)> ordered = CandidateChoices.SkipWhile(x => x.choice < 0).OrderBy(x => x.choice);
 
-                var endOfSequence = ordered.Zip(CandidateChoices.Skip(1), (a, b) => (a.choice + 1) == b.choice).ToList().FindIndex(x => !x);
+                var endOfSequence = ordered.Zip(ordered.Skip(1), (a, b) => (a.choice + 1) == b.choice).ToList().FindIndex(x => !x);
 
                 if(endOfSequence >= 0)
                 {
-                    ordered = ordered.Take(endOfSequence);
+                    ordered = ordered.Take(endOfSequence + 1);
                 }
                 else if (ordered.Count() != 0 && ordered.First().choice != 0)
                 {
