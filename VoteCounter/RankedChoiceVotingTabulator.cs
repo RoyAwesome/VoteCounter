@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Security;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -249,6 +250,72 @@ namespace VoteCounter
             }
 
             return sb.ToString();
+        }
+
+        static List<string> ValidPlacementWords = new()
+        {
+            "first",
+            "second",
+            "third",
+            "fourth",
+            "fifth",
+            "sixth",
+            "seventh",
+            "eighth",
+            "nineth",
+            "tenth"
+        };
+
+        public static string[] ConvertFormatTwo(string[] Candidates, string[] Ballots, out List<string> InvalidBallots)
+        {
+            InvalidBallots = new();
+            List<string> result = new();
+
+            foreach(string ballot in Ballots)
+            {
+                var Choices = ballot.Split(null).Select(x => x.Trim().ToLower()).Where(x => !string.IsNullOrEmpty(x)); //Split by whitespace
+
+                if (!Choices.All(x => ValidPlacementWords.Contains(x)))
+                {
+                    throw new InvalidOperationException("Unable to parse ballot entry that isn't a valid word");
+                }
+
+
+                IEnumerable<(string candidate, int choice)> CandidateChoices = Choices
+                    .Take(Candidates.Length)
+                    .Select((choice, i) =>
+                {
+                    int candidatePreference = ValidPlacementWords.IndexOf(choice.ToLower().Trim());
+                    return (Candidates[i], candidatePreference);
+                });
+                            
+
+              
+                IEnumerable<(string candidate, int choice)> ordered = CandidateChoices.SkipWhile(x => x.choice < 0).OrderBy(x => x.choice);
+
+                var endOfSequence = ordered.Zip(CandidateChoices.Skip(1), (a, b) => (a.choice + 1) == b.choice).ToList().FindIndex(x => !x);
+
+                if(endOfSequence >= 0)
+                {
+                    ordered = ordered.Take(endOfSequence);
+                }
+                else if (ordered.Count() != 0 && ordered.First().choice != 0)
+                {
+                    ordered = Enumerable.Empty<(string candidate, int choice)>();                  
+                }
+
+                if(ordered.Count() > 0)
+                {
+                    result.Add(string.Join(',', ordered.Select(x => x.candidate)));
+                }     
+                else
+                {
+                    InvalidBallots.Add(ballot);
+                }
+
+            }
+
+            return result.ToArray();
         }
 
         public List<string> Candidates

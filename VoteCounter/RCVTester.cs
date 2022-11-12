@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace VoteCounter
 {
@@ -120,6 +121,38 @@ namespace VoteCounter
             Assert.That(round2.ExhaustedBallots, Is.EqualTo(1));
             Assert.That(round2.VoteCounts, Is.EqualTo(new Dictionary<string, int> { { "candidate 2", 2 }, { "candidate 3", 2 } }));
 
+        }
+
+        [Test]
+        public void TestNewFormat()
+        {
+            string[] Candidates = new string[]
+            {
+                "Candidate 1",
+                "Candidate 2",
+                "candidate 3"
+            };
+
+            string[] Ballots = new string[]
+            {
+                "First	Second	",
+                "First	Third	Second",
+                "Second	First	Third",
+                "Second		",
+                "Second		Third",
+            };
+
+            var Converted = RankedChoiceVotingTabulator.ConvertFormatTwo(Candidates, Ballots, out var InvalidBallots);
+
+
+            RankedChoiceVotingTabulator tabulator = new(Converted);
+
+            tabulator.TabulateRounds();
+
+            Assert.That(tabulator.Rounds.Count, Is.EqualTo(1));
+            var round2 = tabulator.Rounds[0];
+            Assert.That(round2.HasWinner, Is.True);
+            Assert.That(round2.ExhaustedBallots, Is.Zero);
         }
 
     }
